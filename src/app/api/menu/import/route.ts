@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { extractMenu, translateEntries, type MenuSource, type TranslatableEntry } from "@/lib/ai";
+import { consumeQuota, MAX_TEXT_CHARS } from "@/lib/quota";
 import { getOwnerContext } from "@/lib/supabase/server";
 
 export const maxDuration = 300; // extraction + translation of a long menu can take a while
@@ -30,10 +31,15 @@ export async function POST(req: Request) {
       source = { kind: "image", mediaType: file.type as (typeof IMAGE_TYPES)[number], base64 };
     else return NextResponse.json({ error: "Upload a JPG, PNG, WebP or PDF" }, { status: 400 });
   } else if (text) {
+    if (text.length > MAX_TEXT_CHARS)
+      return NextResponse.json({ error: `Besedilo je predolgo (največ ${MAX_TEXT_CHARS} znakov)` }, { status: 400 });
     source = { kind: "text", text };
   } else {
     return NextResponse.json({ error: "Upload a file or paste the menu text" }, { status: 400 });
   }
+
+  const quotaError = await consumeQuota(supabase, restaurant.id, "import");
+  if (quotaError) return NextResponse.json({ error: quotaError }, { status: 429 });
 
   try {
     const menu = await extractMenu(source, restaurant.source_lang);

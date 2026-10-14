@@ -41,6 +41,9 @@ create table if not exists public.items (
   created_at     timestamptz not null default now()
 );
 
+-- One restaurant per account for now (also keeps AI quotas per account).
+create unique index if not exists restaurants_one_per_owner on public.restaurants(owner_id);
+
 create index if not exists categories_restaurant_idx on public.categories(restaurant_id, position);
 create index if not exists items_restaurant_idx on public.items(restaurant_id, category_id, position);
 
@@ -64,4 +67,20 @@ create policy "owner writes categories" on public.categories
 
 create policy "owner writes items" on public.items
   for all using (exists (select 1 from public.restaurants r where r.id = restaurant_id and r.owner_id = auth.uid()))
+  with check (exists (select 1 from public.restaurants r where r.id = restaurant_id and r.owner_id = auth.uid()));
+
+-- AI usage log, used to enforce per-restaurant quotas (src/lib/quota.ts) --------
+create table if not exists public.ai_usage (
+  id             uuid primary key default gen_random_uuid(),
+  restaurant_id  uuid not null references public.restaurants(id) on delete cascade,
+  kind           text not null check (kind in ('import', 'retranslate')),
+  created_at     timestamptz not null default now()
+);
+create index if not exists ai_usage_restaurant_idx on public.ai_usage(restaurant_id, kind, created_at desc);
+
+alter table public.ai_usage enable row level security;
+-- Owners can read and add their own usage rows, but never update or delete them.
+create policy "owner reads usage" on public.ai_usage for select
+  using (exists (select 1 from public.restaurants r where r.id = restaurant_id and r.owner_id = auth.uid()));
+create policy "owner logs usage" on public.ai_usage for insert
   with check (exists (select 1 from public.restaurants r where r.id = restaurant_id and r.owner_id = auth.uid()));

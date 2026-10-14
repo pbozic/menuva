@@ -26,6 +26,14 @@ Not yet: Stripe billing, branded PDF export, photos, multiple locations.
    ```
    Open http://localhost:3000, sign in, name your restaurant and import a menu.
 
+## Cost protection
+
+- **Per-restaurant quotas** (`src/lib/quota.ts`): 10 imports/day and 30/month, 100 re-translations/day and 300/month, pasted text capped at 20k characters. Worst case is about $4 per restaurant per month. Every AI call is logged in `ai_usage` before it runs, so parallel requests can't slip past the limit.
+- **One restaurant per account**, so quotas can't be dodged by creating more restaurants.
+- **Set a monthly spend limit in the Anthropic Console** (Settings → Limits) as the final backstop, since anyone can still create new free accounts.
+
+If you already ran `schema.sql` before quotas existed, run `supabase/migrations-001-ai-usage.sql`.
+
 ## Deploy
 
 Push to GitHub and import the repo in Vercel; add the same env vars. Set `NEXT_PUBLIC_SITE_URL` to your real domain so QR codes point to it. The import route can run up to 5 minutes, so the Vercel plan must allow that function duration (Pro, or lower `maxDuration` and keep menus short).

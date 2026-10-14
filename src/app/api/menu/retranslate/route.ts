@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { translateEntries, type TranslatableEntry } from "@/lib/ai";
+import { consumeQuota } from "@/lib/quota";
 import { getOwnerContext } from "@/lib/supabase/server";
 import type { Item } from "@/lib/types";
 
@@ -28,6 +29,9 @@ export async function POST(req: Request) {
   const src = restaurant.source_lang;
   const entries: TranslatableEntry[] = [{ id: "n", kind: "dish_name", text: item.name[src] ?? "" }];
   if (item.description[src]) entries.push({ id: "d", kind: "dish_description", text: item.description[src]! });
+
+  const quotaError = await consumeQuota(supabase, restaurant.id, "retranslate");
+  if (quotaError) return NextResponse.json({ error: quotaError }, { status: 429 });
 
   try {
     const tr = await translateEntries(entries, src, restaurant.languages);
