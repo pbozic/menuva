@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Menuva
 
-## Getting Started
+Multilingual QR menus for restaurants in Slovenia. An owner uploads a photo, PDF or text of their menu; AI extracts the dishes, translates them into SL / EN / DE / IT / HR (keeping regional dish names like *štruklji* and explaining them), and suggests the 14 EU allergens for the owner to confirm. Guests scan a QR code and pick their language.
 
-First, run the development server:
+## What's in this MVP
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Magic-link login** (Supabase Auth)
+- **Menu import** — photo / PDF / pasted text → Claude extracts categories, dishes, prices and allergen suggestions → translated into every enabled language in one pass
+- **Editor** — edit any language per dish, confirm allergens, mark dishes unavailable, add/delete dishes, re-translate a single dish from Slovenian
+- **Public menu** at `/m/<slug>` with a language switcher, allergen numbers and a legend; prints cleanly (Ctrl+P → PDF)
+- **QR code** as SVG on the dashboard and a 1024px PNG for print
+- **Demo menu** at `/m/demo` (works even without a database — useful on sales visits)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Not yet: Stripe billing, branded PDF export, photos, multiple locations.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Setup
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Supabase** — create a free project at supabase.com, open SQL Editor and run `supabase/schema.sql`.
+   In Authentication → URL Configuration, add `http://localhost:3000/auth/callback` (and your production URL later) to Redirect URLs.
+2. **Anthropic** — create an API key at console.anthropic.com.
+3. **Env** — `cp .env.example .env.local` and fill in the values.
+4. **Run**
+   ```bash
+   npm install
+   npm run dev
+   ```
+   Open http://localhost:3000, sign in, name your restaurant and import a menu.
 
-## Learn More
+## Deploy
 
-To learn more about Next.js, take a look at the following resources:
+Push to GitHub and import the repo in Vercel; add the same env vars. Set `NEXT_PUBLIC_SITE_URL` to your real domain so QR codes point to it. The import route can run up to 5 minutes, so the Vercel plan must allow that function duration (Pro, or lower `maxDuration` and keep menus short).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Where things live
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Path | What |
+| --- | --- |
+| `src/lib/ai.ts` | Claude prompts for extraction and translation |
+| `src/lib/glossary.ts` | Slovenian dish glossary — **the translation quality edge, keep growing it** |
+| `src/lib/allergens.ts` | The 14 EU allergens in 5 languages |
+| `src/app/api/menu/import` | Upload → extract → translate → save |
+| `src/app/dashboard` | Owner editor + server actions |
+| `src/app/m/[slug]` | Public guest menu |
+| `supabase/schema.sql` | Tables + row-level security |
 
-## Deploy on Vercel
+## Next steps (weekend 2)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Stripe subscription (€15–25/month) with a trial
+- Branded print PDF per language
+- Landing page copy + pricing
+- Better re-translation (whole menu when a language is added)
