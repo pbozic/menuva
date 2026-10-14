@@ -1,5 +1,6 @@
 -- Menuva database schema
--- Run this once in the Supabase SQL editor (Project → SQL Editor → New query).
+-- Run this once in the Supabase SQL editor (Project → SQL Editor → New query),
+-- then run migrations-002-daily-menus.sql. (migrations-001 is only for databases created before quotas existed.)
 
 create extension if not exists "pgcrypto";
 

@@ -1,18 +1,21 @@
 import QRCode from "qrcode";
 
-/** QR code (SVG) pointing at the public menu. ?format=png for a PNG to print. */
+/** QR code (SVG) pointing at the public menu or daily page. ?format=png for a PNG to print, ?target=daily for /d/. */
 export async function GET(req: Request, ctx: RouteContext<"/api/qr/[slug]">) {
   const { slug } = await ctx.params;
   const origin = process.env.NEXT_PUBLIC_SITE_URL || new URL(req.url).origin;
-  const target = `${origin}/m/${encodeURIComponent(slug)}`;
-  const format = new URL(req.url).searchParams.get("format");
+  const q = new URL(req.url).searchParams;
+  // ?target=daily → today's malica page (/d/...), otherwise the full menu (/m/...)
+  const path = q.get("target") === "daily" ? "d" : "m";
+  const target = `${origin}/${path}/${encodeURIComponent(slug)}`;
+  const format = q.get("format");
 
   if (format === "png") {
     const png = await QRCode.toBuffer(target, { width: 1024, margin: 2, errorCorrectionLevel: "M" });
     return new Response(new Uint8Array(png), {
       headers: {
         "Content-Type": "image/png",
-        "Content-Disposition": `attachment; filename="menu-qr-${slug}.png"`,
+        "Content-Disposition": `attachment; filename="${path === "d" ? "malica" : "menu"}-qr-${slug}.png"`,
       },
     });
   }

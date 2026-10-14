@@ -1,14 +1,15 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export type UsageKind = "import" | "retranslate";
+export type UsageKind = "import" | "retranslate" | "daily";
 
 /**
  * Per-restaurant AI limits. Worst case per restaurant per month at these limits:
- * 30 imports × ~$0.11 + 300 re-translations × ~$0.002 ≈ $4.
+ * 30 imports × ~$0.11 + 300 re-translations × ~$0.002 + 90 daily menus × ~$0.01 ≈ $5.
  */
 export const LIMITS: Record<UsageKind, { perDay: number; perMonth: number }> = {
   import: { perDay: 10, perMonth: 30 },
   retranslate: { perDay: 100, perMonth: 300 },
+  daily: { perDay: 8, perMonth: 90 },
 };
 
 /** Max characters of pasted menu text we accept. */
@@ -18,6 +19,10 @@ const MESSAGES: Record<UsageKind, { day: string; month: string }> = {
   import: {
     day: "Dosegli ste dnevno omejitev uvozov. Poskusite znova jutri.",
     month: "Dosegli ste mesečno omejitev uvozov. Pišite nam, če potrebujete več.",
+  },
+  daily: {
+    day: "Dosegli ste dnevno omejitev za malico. Poskusite znova jutri.",
+    month: "Dosegli ste mesečno omejitev za malico. Pišite nam, če potrebujete več.",
   },
   retranslate: {
     day: "Dosegli ste dnevno omejitev prevodov. Poskusite znova jutri.",

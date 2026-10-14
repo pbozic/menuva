@@ -37,6 +37,7 @@ export async function createRestaurant(formData: FormData) {
   const { error } = await supabase.from("restaurants").insert({ owner_id: user!.id, name, slug });
   if (error) throw new Error(error.message);
   done();
+  redirect("/dashboard/malica");
 }
 
 export async function updateRestaurant(formData: FormData) {
@@ -131,4 +132,22 @@ export async function signOut() {
   const { supabase } = await getOwnerContext();
   await supabase.auth.signOut();
   redirect("/");
+}
+
+/** Details printed on the daily malica cards. */
+export async function updateCardDetails(formData: FormData) {
+  const { supabase, restaurant } = await requireOwner();
+  if (!restaurant) return;
+  const clean = (k: string, max: number) => String(formData.get(k) ?? "").trim().slice(0, max) || null;
+  const accent = String(formData.get("accent_color") ?? "");
+  await supabase
+    .from("restaurants")
+    .update({
+      phone: clean("phone", 40),
+      address: clean("address", 120),
+      malica_hours: clean("malica_hours", 40),
+      accent_color: /^#[0-9a-f]{6}$/i.test(accent) ? accent : restaurant.accent_color,
+    })
+    .eq("id", restaurant.id);
+  revalidatePath("/dashboard/malica");
 }

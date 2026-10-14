@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { ALL_LANGS, LANGUAGES, t } from "@/lib/languages";
 import { loadMenu } from "@/lib/menu";
 import { getOwnerContext } from "@/lib/supabase/server";
-import { addItem, createRestaurant, signOut, updateCategory, updateRestaurant } from "./actions";
+import { addItem, updateCategory, updateRestaurant } from "./actions";
+import { CreateRestaurant } from "./create-restaurant";
 import { ImportMenu } from "./import-menu";
 import { ItemEditor } from "./item-editor";
 
@@ -11,18 +12,7 @@ export default async function Dashboard() {
   const { supabase, user, restaurant } = await getOwnerContext();
   if (!user) redirect("/login");
 
-  if (!restaurant) {
-    return (
-      <main className="mx-auto w-full max-w-md flex-1 px-6 py-20">
-        <h1 className="font-serif text-3xl">Dobrodošli</h1>
-        <p className="mt-2 text-muted">Kako se imenuje vaša restavracija?</p>
-        <form action={createRestaurant} className="mt-6 space-y-4">
-          <input name="name" required className="input" placeholder="Gostilna Pri Lojzetu" />
-          <button className="btn-primary w-full">Nadaljuj</button>
-        </form>
-      </main>
-    );
-  }
+  if (!restaurant) return <CreateRestaurant />;
 
   const menu = await loadMenu(supabase, { id: restaurant.id });
   const categories = menu?.categories ?? [];
@@ -34,15 +24,12 @@ export default async function Dashboard() {
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6">
       <header className="flex flex-wrap items-center gap-3">
         <div className="flex-1">
-          <p className="text-sm text-muted">Menuva</p>
+          <p className="text-sm text-muted">Jedilni list</p>
           <h1 className="font-serif text-3xl">{restaurant.name}</h1>
         </div>
         <Link href={`/m/${restaurant.slug}`} target="_blank" className="btn-ghost">
           Odpri javni meni ↗
         </Link>
-        <form action={signOut}>
-          <button className="btn-ghost">Odjava</button>
-        </form>
       </header>
 
       <section className="mt-8 grid gap-6 md:grid-cols-[1fr_16rem]">

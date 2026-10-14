@@ -1,4 +1,4 @@
-import type { MenuData } from "./types";
+import type { DailyMenu, MenuData } from "./types";
 
 /** Built-in demo menu shown at /m/demo — handy for sales visits and for trying the UI without a database. */
 export const DEMO_MENU: MenuData = {
@@ -12,6 +12,12 @@ export const DEMO_MENU: MenuData = {
     languages: ["sl", "en", "de", "it", "hr"],
     currency: "EUR",
     created_at: "2026-01-01",
+    phone: "041 123 456",
+    address: "Trubarjeva 1, Ljubljana",
+    malica_hours: "11:00–15:00",
+    trial_ends_at: "2099-01-01T00:00:00Z",
+    stripe_customer_id: null,
+    subscription_status: "active",
   },
   categories: [
     {
@@ -76,3 +82,44 @@ export const DEMO_MENU: MenuData = {
     },
   ],
 };
+
+
+/** Demo daily menu, always "today" — shown at /d/demo and in the demo cards. */
+export function demoDaily(date: string): DailyMenu {
+  return {
+    id: "demo-daily",
+    restaurant_id: "demo",
+    menu_date: date,
+    published: true,
+    updated_at: `${date}T08:00:00Z`,
+    set_price: 8.9,
+    note: {
+      sl: "Vegetarijanska možnost na voljo",
+      en: "Vegetarian option available",
+      de: "Vegetarische Option verfügbar",
+      it: "Disponibile opzione vegetariana",
+      hr: "Dostupna vegetarijanska opcija",
+    },
+    items: [
+      {
+        name: { sl: "Goveja juha z rezanci", en: "Beef broth with noodles", de: "Rindssuppe mit Nudeln", it: "Brodo di manzo con tagliolini", hr: "Goveđa juha s rezancima" },
+        description: {},
+        price: null,
+        allergens: [1, 3, 9],
+      },
+      {
+        name: { sl: "Pečen piščanec", en: "Roast chicken", de: "Brathähnchen", it: "Pollo arrosto", hr: "Pečena piletina" },
+        description: { sl: "pražen krompir, sezonska solata", en: "Slovenian-style sautéed potatoes, seasonal salad", de: "Röstkartoffeln, Salat der Saison", it: "patate saltate, insalata di stagione", hr: "prženi krumpir, sezonska salata" },
+        price: null,
+        allergens: [],
+      },
+      {
+        name: { sl: "Ajdovi žganci z ocvirki", en: "Ajdovi žganci – buckwheat spoonbread with pork cracklings", de: "Ajdovi žganci – Buchweizensterz mit Grammeln", it: "Ajdovi žganci – polenta di grano saraceno con ciccioli", hr: "Ajdovi žganci – heljdini žganci s čvarcima" },
+        description: { sl: "kislo zelje", en: "sauerkraut", de: "Sauerkraut", it: "crauti", hr: "kiseli kupus" },
+        price: 7.5,
+        allergens: [7],
+      },
+    ],
+  };
+}
+

@@ -195,3 +195,81 @@ ${glossaryForPrompt()}`;
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// 3. Daily menu (malica): whiteboard photo / pasted text → structured items
+// ---------------------------------------------------------------------------
+
+const ExtractedDaily = z.object({
+  items: z.array(
+    z.object({
+      name: z.string(),
+      description: z.string().optional().default(""),
+      price: z.number().nullable().optional(),
+      suggested_allergens: z.array(z.number()).optional().default([]),
+    }),
+  ),
+  set_price: z.number().nullable().optional(),
+  note: z.string().optional().default(""),
+});
+export type ExtractedDaily = z.infer<typeof ExtractedDaily>;
+
+const dailyTool: Anthropic.Tool = {
+  name: "save_daily_menu",
+  description: "Save today's daily menu (malica).",
+  input_schema: {
+    type: "object",
+    properties: {
+      items: {
+        type: "array",
+        description: "Dishes in the order written. A set menu like 'Meni 1: juha, glavna jed, solata' becomes one item per option (name 'Meni 1', description listing the courses).",
+        items: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            description: { type: "string", description: "Side dishes / courses / details, empty if none" },
+            price: { type: ["number", "null"], description: "Price in euros for this item, null if only a set price is given" },
+            suggested_allergens: {
+              type: "array",
+              items: { type: "integer", minimum: 1, maximum: 14 },
+              description: "EU allergen numbers (1 gluten, 2 crustaceans, 3 eggs, 4 fish, 5 peanuts, 6 soy, 7 milk, 8 tree nuts, 9 celery, 10 mustard, 11 sesame, 12 sulphites, 13 lupin, 14 molluscs). Use printed numbers if present, otherwise best guess.",
+            },
+          },
+          required: ["name", "description", "price", "suggested_allergens"],
+        },
+      },
+      set_price: { type: ["number", "null"], description: "One price for the whole malica (e.g. 'Malica 7,50 €'), null if none" },
+      note: { type: "string", description: "Short extra info for guests (e.g. 'vegetarijanska možnost', 'tudi za s seboj'), empty if none. Never put opening hours, dates or the restaurant name here." },
+    },
+    required: ["items", "set_price", "note"],
+  },
+};
+
+export async function extractDailyMenu(
+  source: Exclude<MenuSource, { kind: "pdf" }>,
+  sourceLang: Lang = "sl",
+): Promise<ExtractedDaily> {
+  const content: Anthropic.ContentBlockParam[] = [];
+  if (source.kind === "image") {
+    content.push({ type: "image", source: { type: "base64", media_type: source.mediaType, data: source.base64 } });
+  } else {
+    content.push({ type: "text", text: `<daily_menu>\n${source.text}\n</daily_menu>` });
+  }
+  content.push({
+    type: "text",
+    text: `This is a restaurant's daily lunch menu (malica) — often a whiteboard photo or a quick social media post. Extract the dishes in the original language (${LANGUAGES[sourceLang].label}); do not translate. Fix spelling and capitalise dish names properly. Ignore dates, weekday names, the restaurant name, opening hours, phone numbers, hashtags and emojis.`,
+  });
+
+  const res = await client().messages.create({
+    model: MODEL,
+    max_tokens: 4000,
+    tools: [dailyTool],
+    tool_choice: { type: "tool", name: "save_daily_menu" },
+    messages: [{ role: "user", content }],
+  });
+  const block = res.content.find((b) => b.type === "tool_use");
+  if (!block || block.type !== "tool_use") throw new Error("Daily menu extraction returned no data");
+  const parsed = ExtractedDaily.parse(block.input);
+  parsed.items.forEach((i) => (i.suggested_allergens = cleanAllergens(i.suggested_allergens)));
+  return parsed;
+}

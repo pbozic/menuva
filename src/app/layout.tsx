@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Menuva — večjezični meniji za restavracije",
-  description: "Naložite meni, mi ga prevedemo v angleščino, nemščino, italijanščino in hrvaščino — z alergeni in QR kodo.",
+  title: "Menuva — dnevna malica in meniji za restavracije",
+  description: "Fotografirajte tablo z malico — dobite sliko za Instagram, besedilo za Facebook, prevod in posodobljeno spletno stran.",
 };
 
 export const viewport: Viewport = {

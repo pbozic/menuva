@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { translateEntries, type TranslatableEntry } from "@/lib/ai";
+import { hasAccess, NO_ACCESS_MESSAGE } from "@/lib/billing";
 import { consumeQuota } from "@/lib/quota";
 import { getOwnerContext } from "@/lib/supabase/server";
 import type { Item } from "@/lib/types";
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
   const entries: TranslatableEntry[] = [{ id: "n", kind: "dish_name", text: item.name[src] ?? "" }];
   if (item.description[src]) entries.push({ id: "d", kind: "dish_description", text: item.description[src]! });
 
+  if (!hasAccess(restaurant)) return NextResponse.json({ error: NO_ACCESS_MESSAGE }, { status: 402 });
   const quotaError = await consumeQuota(supabase, restaurant.id, "retranslate");
   if (quotaError) return NextResponse.json({ error: quotaError }, { status: 429 });
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { extractMenu, translateEntries, type MenuSource, type TranslatableEntry } from "@/lib/ai";
+import { hasAccess, NO_ACCESS_MESSAGE } from "@/lib/billing";
 import { consumeQuota, MAX_TEXT_CHARS } from "@/lib/quota";
 import { getOwnerContext } from "@/lib/supabase/server";
 
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Upload a file or paste the menu text" }, { status: 400 });
   }
 
+  if (!hasAccess(restaurant)) return NextResponse.json({ error: NO_ACCESS_MESSAGE }, { status: 402 });
   const quotaError = await consumeQuota(supabase, restaurant.id, "import");
   if (quotaError) return NextResponse.json({ error: quotaError }, { status: 429 });
 
