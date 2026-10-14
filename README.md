@@ -1,5 +1,7 @@
 # Menuva
 
+> Current status, infrastructure and setup checklist: see [HANDOFF.md](HANDOFF.md).
+
 **Daily malica publisher** for Slovenian restaurants: photograph the whiteboard, and Menuva turns today's lunch into an Instagram story/post image, ready-to-paste Facebook/Instagram/Google text (SL + EN), a website widget and a QR code that always shows today's menu.
 
 Also: multilingual QR menus for restaurants in Slovenia. An owner uploads a photo, PDF or text of their menu; AI extracts the dishes, translates them into SL / EN / DE / IT / HR (keeping regional dish names like *štruklji* and explaining them), and suggests the 14 EU allergens for the owner to confirm. Guests scan a QR code and pick their language.
@@ -29,7 +31,7 @@ Also: multilingual QR menus for restaurants in Slovenia. An owner uploads a phot
 - **QR code** as SVG on the dashboard and a 1024px PNG for print
 - **Demo menu** at `/m/demo` (works even without a database — useful on sales visits)
 
-Not yet: Stripe billing, branded PDF export, photos, multiple locations.
+Not yet: branded PDF export, dish photos, multiple locations.
 
 ## Setup
 
@@ -47,7 +49,7 @@ Not yet: Stripe billing, branded PDF export, photos, multiple locations.
 
 ## Cost protection
 
-- **Per-restaurant quotas** (`src/lib/quota.ts`): 10 imports/day and 30/month, 100 re-translations/day and 300/month, pasted text capped at 20k characters. Worst case is about $4 per restaurant per month. Every AI call is logged in `ai_usage` before it runs, so parallel requests can't slip past the limit.
+- **Per-restaurant quotas** (`src/lib/quota.ts`): 10 imports/day and 30/month, 100 re-translations/day and 300/month, 8 daily-malica reads/day and 90/month, pasted text capped at 20k characters. Worst case is about $5 per restaurant per month. Every AI call is logged in `ai_usage` before it runs, so parallel requests can't slip past the limit.
 - **One restaurant per account**, so quotas can't be dodged by creating more restaurants.
 - **Set a monthly spend limit in the Anthropic Console** (Settings → Limits) as the final backstop, since anyone can still create new free accounts.
 
