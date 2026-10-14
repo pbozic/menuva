@@ -42,7 +42,7 @@ alter table public.ai_usage add constraint ai_usage_kind_check check (kind in ('
 
 -- Billing columns must only be changed by the Stripe webhook (service role), never by the owner.
 create or replace function public.protect_billing_columns() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 begin
   if auth.role() <> 'service_role' then
     new.trial_ends_at := old.trial_ends_at;
@@ -58,7 +58,7 @@ create trigger restaurants_protect_billing before update on public.restaurants
 
 -- And on insert, owners always start with a fresh trial.
 create or replace function public.reset_billing_on_insert() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 begin
   if auth.role() <> 'service_role' then
     new.trial_ends_at := now() + interval '14 days';
